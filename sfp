@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+
+use XML::FeedPP;
+
+my $source = 'http://www.userfriendly.org/rss/uf.rss';
+my $cache = "/tmp/feed.rss";
+
+my $feed = XML::FeedPP->new($source);
+
+if (-e $cache) {
+    $feed->merge($cache);
+}
+
+$feed->to_file($cache);
+
+$feed->remove_item('');
+
+print $feed->to_string();
