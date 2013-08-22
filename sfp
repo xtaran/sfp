@@ -1,9 +1,17 @@
 #!/usr/bin/perl
 
 use XML::FeedPP;
+use File::Path;
+
+# Config
 
 my $source = 'http://www.userfriendly.org/rss/uf.rss';
-my $cache = "/tmp/feed.rss";
+my $cache_path = "/tmp/sfp/";
+
+# Init
+
+mkpath($cache_path);
+my $cache = url_to_file($source);
 
 my $feed = XML::FeedPP->new($source);
 
@@ -16,3 +24,9 @@ $feed->to_file($cache);
 $feed->remove_item('');
 
 print $feed->to_string();
+
+sub url_to_file {
+    my $url = shift;
+    $url =~ s(/)(_)g;
+    return $cache_path.$url;
+}
