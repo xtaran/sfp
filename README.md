@@ -36,8 +36,11 @@ Requirements
 * Modern::Perl
 * HTTP::Proxy
 * XML::FeedPP
+
+#### Modules which are part of Perl's core
 * File::Basename
 * File::Path
+* autodie
 
 ### Current requirements, to be discussed
 
