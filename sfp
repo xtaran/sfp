@@ -39,7 +39,9 @@ my @cache_paths = ("/var/cache/sfp", "$ENV{HOME}/.cache/sfp");
 my $meta_suffix = ".meta";
 
 my %Config = (
-    interval => 123, # in minutes, a little bit more than 2 hours
+    refetch => {
+        interval => 123, # in minutes, a little bit more than 2 hours
+    },
     blacklist => [],
     proxy => {
         port => 0xFEED,
@@ -52,6 +54,9 @@ my %Config = (
     log => {
         level => 'PROXY',
     },
+    cache => {
+        age => '1m'
+    }
 );
 
 # Init
@@ -59,7 +64,9 @@ my %Config = (
 foreach my $config_file (@config_file_locations) {
     if (-r $config_file) {
         # Merge config from file into default config
-        %Config = (%Config, %{ReadINI($config_file)});
+        %Config = (%Config, %{ReadINI($config_file,
+                                  case => 'tolower',
+                                  allowmultiple => 1)});
         # Only handle first file found
         last;
     }
