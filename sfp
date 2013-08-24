@@ -1,32 +1,102 @@
 #!/usr/bin/perl
 
+use Modern::Perl 2011;
+
+use HTTP::Proxy;
 use XML::FeedPP;
+use Config::IniHash;
+
+use File::Basename;
 use File::Path;
 
 # Config
 
-my $source = 'http://www.userfriendly.org/rss/uf.rss';
-my $cache_path = "/tmp/sfp/";
+my @config_file_locations = (qw(/etc/sfp/sfp.conf /etc/sfp.conf),
+                             "$ENV{HOME}/.config/sfp/sfp.conf",
+                             "$ENV{HOME}/.sfp.conf");
+my @cache_paths = ("/var/cache/sfp", "$ENV{HOME}/.cache/sfp");
+my $meta_suffix = ".meta";
+
+my %Config = (
+    interval => 123, # in minutes, a little bit more than 2 hours
+    blacklist => [],
+    proxy => {
+        port => 0xFEED,
+    }
+);
+
+#my $source = 'http://www.userfriendly.org/rss/uf.rss';
+#my $cache_path = "/tmp/sfp/";
 
 # Init
 
-mkpath($cache_path);
-my $cache = url_to_file($source);
-
-my $feed = XML::FeedPP->new($source);
-
-if (-e $cache) {
-    $feed->merge($cache);
+foreach my $config_file (@config_file_locations) {
+    if (-r $config_file) {
+        # Merge config from file into default config
+        %Config = (%Config, %{ReadINI($config_file)});
+        # Only handle first file found
+        last;
+    }
 }
 
-$feed->to_file($cache);
+# Check if there's a different cache path set in the config
+if (defined $Config{cache_path}) {
+    @cache_paths = ($Config{cache_path});
+}
 
-$feed->remove_item('');
+my $cache_path;
+foreach my $potential_cache_path (@cache_paths) {
+    my $parent = dirname($potential_cache_path);
+    my $pparent = dirname($parent);
+    given ($potential_cache_path) {
+        when (-d and -w _) {
+            $cache_path = $_;
+            last; }
+        when (-d $parent and -w _)  {
+            create_cache_path($cache_path = $_, $parent);
+            last; }
+        when (-d $pparent and -w _) {
+            create_cache_path($cache_path = $_, $pparent);
+            last; }
+    }
+}
 
-print $feed->to_string();
+die "Couldn't create any of the potential cache directory locations: ".
+    join(", ", @cache_paths) unless $cache_path;
+
+# Start the proxy daemon
+my $proxy = HTTP::Proxy->new( port => $Config{proxy}{port} );
+
+...;
+
+# Main loop
+$proxy->start;
+
+sub handle_request {
+    my $source = shift;
+
+    my $cache = url_to_file($source);
+    my $feed = XML::FeedPP->new($source);
+
+    if (-e $cache) {
+        $feed->merge($cache);
+    }
+    $feed->to_file($cache);
+
+    #TODO Filter: $feed->remove_item('');
+
+    return $feed->to_string();
+}
 
 sub url_to_file {
     my $url = shift;
     $url =~ s(/)(_)g;
     return $cache_path.$url;
+}
+
+sub create_cache_path {
+    my ($cache_path, $parent) = @_;
+    my @dirs = mkpath($cache_path);
+    die "Couldn't create $cache_path despite $parent seems to be a writable directory: $!"
+        unless @dirs;
 }
