@@ -44,7 +44,8 @@ Requirements
 
 ### Current requirements, to be discussed
 
-* Config::IniHash
+* YAML
+* Hash::Merge::Simple
 
 Copyright
 ---------

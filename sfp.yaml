@@ -1,0 +1,24 @@
+# Semantic Feed Proxy Configuration File
+refetch:
+  # in minutes, a little bit more than 2 hours
+  interval: 120
+
+blacklist:
+
+proxy:
+  # 0xFEED
+  port: 65261
+
+log:
+  level: PROXY
+
+cache:
+  # Not yet implemented
+  age: 2m
+
+mimetypes:
+  - application/atom+xml
+  - application/rdf+xml
+  - application/rss+xml
+  - application/foobar+xml
+  - text/xml

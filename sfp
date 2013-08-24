@@ -25,16 +25,17 @@ use HTTP::Proxy qw(:log);
 use HTTP::Proxy::BodyFilter::complete;
 use HTTP::Proxy::BodyFilter::simple;
 use XML::FeedPP;
-use Config::IniHash;
+use YAML qw(LoadFile);
+use Hash::Merge::Simple qw(merge);
 
 use File::Basename;
 use File::Path;
 
 # Config
 
-my @config_file_locations = (qw(/etc/sfp/sfp.conf /etc/sfp.conf),
-                             "$ENV{HOME}/.config/sfp/sfp.conf",
-                             "$ENV{HOME}/.sfp.conf");
+my @config_file_locations = (qw(/etc/sfp/sfp.yaml /etc/sfp.yaml),
+                             "$ENV{HOME}/.yamlig/sfp/sfp.yaml",
+                             "$ENV{HOME}/.sfp.yaml");
 my @cache_paths = ("/var/cache/sfp", "$ENV{HOME}/.cache/sfp");
 my $meta_suffix = ".meta";
 
@@ -64,9 +65,8 @@ my %Config = (
 foreach my $config_file (@config_file_locations) {
     if (-r $config_file) {
         # Merge config from file into default config
-        %Config = (%Config, %{ReadINI($config_file,
-                                  case => 'tolower',
-                                  allowmultiple => 1)});
+        %Config = %{merge(\%Config, LoadFile($config_file))};
+
         # Only handle first file found
         last;
     }
