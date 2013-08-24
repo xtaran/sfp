@@ -19,7 +19,7 @@ a per item base.
 Current State
 -------------
 
-As of now this is a working prototype without
+As of now this is a working prototype **without**
 
 * Cache expiration
 * Limiting the amount of cached items
