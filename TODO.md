@@ -11,3 +11,6 @@ Ideas
 
 * Dynamic intervals based on request frequency
 * Maybe only return cached stuff on too frequent requests
+* Filtering feeds by item properties, e.g. "$feed->remove_item('');"
+  filters empty LOTD items in the UF feed.
+  * Needs to be configurable via configuration files
