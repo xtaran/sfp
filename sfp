@@ -32,9 +32,6 @@ my %Config = (
                       text/xml ]],
 );
 
-#my $source = 'http://www.userfriendly.org/rss/uf.rss';
-#my $cache_path = "/tmp/sfp/";
-
 # Init
 
 foreach my $config_file (@config_file_locations) {
