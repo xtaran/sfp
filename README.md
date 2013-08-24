@@ -42,3 +42,23 @@ Requirements
 ### Current requirements, to be discussed
 
 * Config::IniHash
+
+Copyright
+---------
+
+Copyright 2013 Axel Beckert <abe@deuxchevaux.org>
+
+License
+-------
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the
+[GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0)
+as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+*without any warranty*; without even the implied warranty of
+*merchantability or fitness for a particular purpose*.  See the
+[GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0)
+for more details.
