@@ -5,7 +5,7 @@ Idea
 ----
 
 Some RSS/RDF/Atom feeds contain only few items which rotate out quite
-quickly. A very extrem example is
+quickly. A very extreme example is
 [UserFriendly's feed](http://www.userfriendly.org/rss/uf.rss) which
 only contains one (relevant) item and changes every day.
 
