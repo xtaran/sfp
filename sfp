@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 
 use Modern::Perl 2011;
+use autodie;
 
-use HTTP::Proxy;
+use HTTP::Proxy qw(:log);
 use HTTP::Proxy::BodyFilter::complete;
 use HTTP::Proxy::BodyFilter::simple;
 use XML::FeedPP;
@@ -30,6 +31,9 @@ my %Config = (
                       application/rss+xml
                       application/xml
                       text/xml ]],
+    log => {
+        level => 'PROXY',
+    },
 );
 
 # Init
@@ -42,6 +46,22 @@ foreach my $config_file (@config_file_locations) {
         last;
     }
 }
+
+# Setup logging
+my $logmask = PROXY;
+if ( defined $Config{log}{level} ) {
+    die "Can't parse log level '".
+        $Config{log}{level}.
+        "'. See HTTP::Proxy for valid values."
+        if $Config{log}{level} =~ /[^A-Z\s|&!]/;
+    $logmask = eval($Config{log}{level});
+}
+
+my $logfh;
+if ( defined $Config{log}{file} ) {
+    $logfh = IO::File->new($Config{log}{file}, '>>');
+}
+
 
 # Check if there's a different cache path set in the config
 if (defined $Config{cache_path}) {
@@ -74,6 +94,7 @@ $cache_path =~ s(/$)();
 # Start the proxy daemon
 my $proxy = HTTP::Proxy->new(
     port => $Config{proxy}{port},
+    logmask => $logmask,
 );
 
 # Install the filters
@@ -82,7 +103,7 @@ my $filter = HTTP::Proxy::BodyFilter::simple->new(
         my ( $self, $dataref, $message, $protocol, $buffer ) = @_;
         # Only act if data is complete
         return unless $$dataref ne '';
-        $$dataref = handle_request($message->base->as_string, $$dataref);
+        $$dataref = handle_request($message->base->as_string, $$dataref, $message);
     },
 );
 
@@ -100,19 +121,51 @@ foreach my $mime_type (@{$Config{mimetypes}}) {
 $proxy->start;
 
 sub handle_request {
-    my ($url, $contents) = @_;
+    my ($url, $contents, $m) = @_;
 
     my $cache = url_to_file($url);
     my $feed = XML::FeedPP->new($contents, '-type' => 'string');
 
+    my $cache_size = 0;
     if (-e $cache) {
+        $cache_size = -s $cache;
         $feed->merge($cache);
     }
     $feed->to_file($cache);
 
     #TODO Filter: $feed->remove_item('');
 
-    return $feed->to_string();
+    my $new_contents = $feed->to_string();
+
+    $proxy->log(PROXY, 'FEED',
+                join(' ',
+                     format_req_header('C', $m, 'x-forwarded-for'),
+                     format_req(       'M', $m, 'method'),
+                     format_req(       'U', $m, 'uri'),
+                     format_elem(      'S', $m->status_line),
+                     format_elem(      'L', (length($contents).
+                                             "+$cache_size=".
+                                             length($new_contents))),
+                     format_req(       'R', $m, 'referrer'),
+                     format_req(       'A', $m, 'user_agent'),
+                ));
+
+    return $new_contents;
+}
+
+sub format_elem {
+    my ($prefix, $string) = @_;
+    return "$prefix:".($string // '');
+}
+
+sub format_req_header {
+    my ($prefix, $m, $header) = @_;
+    return format_elem($prefix, $m->request->header($header));
+}
+
+sub format_req {
+    my ($prefix, $m, $func) = @_;
+    return format_elem($prefix, $m->request->$func);
 }
 
 sub url_to_file {
