@@ -71,13 +71,20 @@ foreach my $potential_cache_path (@cache_paths) {
 die "Couldn't create any of the potential cache directory locations: ".
     join(", ", @cache_paths) unless $cache_path;
 
+# Remove trailing slash from cache_path
+$cache_path =~ s(/$)();
+
 # Start the proxy daemon
-my $proxy = HTTP::Proxy->new( port => $Config{proxy}{port} );
+my $proxy = HTTP::Proxy->new(
+    port => $Config{proxy}{port},
+);
 
 # Install the filters
 my $filter = HTTP::Proxy::BodyFilter::simple->new(
     sub {
         my ( $self, $dataref, $message, $protocol, $buffer ) = @_;
+        # Only act if data is complete
+        return unless $$dataref ne '';
         $$dataref = handle_request($message->base->as_string, $$dataref);
     },
 );
@@ -95,13 +102,10 @@ foreach my $mime_type (@{$Config{mimetypes}}) {
 # Main loop
 $proxy->start;
 
-#use Data::Dumper;
-
 sub handle_request {
     my ($url, $contents) = @_;
 
     my $cache = url_to_file($url);
-    #die Dumper \@_;
     my $feed = XML::FeedPP->new($contents, '-type' => 'string');
 
     if (-e $cache) {
@@ -117,7 +121,7 @@ sub handle_request {
 sub url_to_file {
     my $url = shift;
     $url =~ s(/)(_)g;
-    return $cache_path.$url;
+    return "$cache_path/$url";
 }
 
 sub create_cache_path {
