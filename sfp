@@ -3,6 +3,8 @@
 use Modern::Perl 2011;
 
 use HTTP::Proxy;
+use HTTP::Proxy::BodyFilter::complete;
+use HTTP::Proxy::BodyFilter::simple;
 use XML::FeedPP;
 use Config::IniHash;
 
@@ -22,7 +24,12 @@ my %Config = (
     blacklist => [],
     proxy => {
         port => 0xFEED,
-    }
+    },
+    mimetypes => [qw[ application/atom+xml
+                      application/rdf+xml
+                      application/rss+xml
+                      application/xml
+                      text/xml ]],
 );
 
 #my $source = 'http://www.userfriendly.org/rss/uf.rss';
@@ -67,16 +74,35 @@ die "Couldn't create any of the potential cache directory locations: ".
 # Start the proxy daemon
 my $proxy = HTTP::Proxy->new( port => $Config{proxy}{port} );
 
-...;
+# Install the filters
+my $filter = HTTP::Proxy::BodyFilter::simple->new(
+    sub {
+        my ( $self, $dataref, $message, $protocol, $buffer ) = @_;
+        $$dataref = handle_request($message->base->as_string, $$dataref);
+    },
+);
+
+
+foreach my $mime_type (@{$Config{mimetypes}}) {
+    $proxy->push_filter(
+        method => 'GET',
+        mime => $mime_type,
+        response => HTTP::Proxy::BodyFilter::complete->new,
+        response => $filter,
+    );
+}
 
 # Main loop
 $proxy->start;
 
-sub handle_request {
-    my $source = shift;
+#use Data::Dumper;
 
-    my $cache = url_to_file($source);
-    my $feed = XML::FeedPP->new($source);
+sub handle_request {
+    my ($url, $contents) = @_;
+
+    my $cache = url_to_file($url);
+    #die Dumper \@_;
+    my $feed = XML::FeedPP->new($contents, '-type' => 'string');
 
     if (-e $cache) {
         $feed->merge($cache);
