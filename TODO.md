@@ -5,6 +5,7 @@ TODO
 * Refetch already cached stuff automatically again in intervals.
   * Should default to value given in feed itself
 * Access control (based on clients, feed URLs or maybe login)
+* Logging
 
 Ideas
 =====

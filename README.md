@@ -24,6 +24,7 @@ As of now this is a working prototype **without**
 * Cache expiration
 * Limiting the amount of cached items
 * Access control
+* Logging
 
 Default port is 65261 (aka 0xFEED).
 
