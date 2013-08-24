@@ -25,6 +25,8 @@ As of now this is a working prototype **without**
 * Limiting the amount of cached items
 * Access control
 
+Default port is 65261 (aka 0xFEED).
+
 Requirements
 ------------
 
