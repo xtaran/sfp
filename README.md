@@ -32,6 +32,7 @@ Requirements
 
 ### Hard requirments
 
+* Perl 5.10
 * Modern::Perl
 * HTTP::Proxy
 * XML::FeedPP
